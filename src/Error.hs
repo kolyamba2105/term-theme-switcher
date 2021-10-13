@@ -2,9 +2,9 @@ module Error (Error(..)) where
 
 import           Data.Yaml
 
-data Error = InvalidUrl | InvalidFileName | FileParseError ParseException
+data Error = InvalidUrl | InvalidConfigPath | FileParseError ParseException
 
 instance Show Error where
-  show InvalidUrl                 = "Invalid URL"
-  show InvalidFileName            = "Invalid file name"
+  show InvalidUrl                 = "Invalid URL!"
+  show InvalidConfigPath          = "Invalid config path!"
   show (FileParseError exception) = prettyPrintParseException exception

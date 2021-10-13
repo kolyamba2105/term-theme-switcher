@@ -2,7 +2,7 @@ module Lib (parseConfig) where
 
 import           Config
 import           Control.Monad
-import           Data.ByteString
+import           Data.ByteString           hiding (append)
 import           Data.Either.Combinators
 import qualified Data.HashMap.Strict       as SHM
 import qualified Data.List                 as L
@@ -35,16 +35,20 @@ applyRemoteTheme :: FilePath -> String -> IO ()
 applyRemoteTheme configPath themeUrl = do
   config  <- decodeConfig configPath
   theme   <- fetchTheme themeUrl
-  either print id $ liftM3 saveTheme name config theme
+  either print id $ liftM3 saveTheme nextConfigPath config theme
     where
-      name = maybeToRight InvalidFileName (fromText . T.pack <$> (parseURI themeUrl >>= extractThemeName))
+      nextConfigPath :: Either Error FilePath
+      nextConfigPath = maybeToRight InvalidConfigPath (append (directory configPath) . fromText . T.pack <$> (parseURI themeUrl >>= extractThemeName))
+
+      extractThemeName :: URI -> Maybe String
       extractThemeName = fmap T.unpack . ListUtils.last . T.splitOn (T.pack "/") . T.pack . uriPath
 
 applyLocalTheme :: FilePath -> FilePath -> IO ()
 applyLocalTheme configPath themePath = do
   config  <- decodeConfig configPath
   theme   <- decodeLocalTheme themePath
-  either print id $ liftM2 (saveTheme $ filename themePath) config theme
+  let nextConfigPath = directory configPath </> filename themePath
+  either print id $ liftM2 (saveTheme nextConfigPath) config theme
 
 saveTheme :: FilePath -> Object -> Theme -> IO ()
 saveTheme name config theme = encodeFile (encodeString name) (applyTheme theme config)
