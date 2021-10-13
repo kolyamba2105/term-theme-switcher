@@ -29,3 +29,7 @@ Available options:
   -c,--config STRING       Path to initial config file
   -u,--url STRING          URL to theme file
 ```
+
+## Demo
+
+https://user-images.githubusercontent.com/33033411/137175262-f9fc80b5-c7ec-45ac-ab86-cb3b6c6afcb1.mov
