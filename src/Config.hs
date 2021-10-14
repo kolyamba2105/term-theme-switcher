@@ -18,6 +18,9 @@ data Config
       { config :: Maybe String  <?> "Path to initial config file"
       , url    :: String        <?> "URL to theme file"
       }
+  | Reset
+      { config :: Maybe String  <?> "Path to initial config file"
+      }
   deriving (Generic, Show)
 
 instance ParseRecord Config where

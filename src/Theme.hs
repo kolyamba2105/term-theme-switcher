@@ -1,7 +1,9 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module Theme (Theme, colors) where
+module Theme (Theme, replace, reset) where
 
+import qualified Data.HashMap.Strict as SHM
+import qualified Data.Text           as T
 import           Data.Yaml
 import           GHC.Generics
 
@@ -10,8 +12,6 @@ newtype Theme = Theme {colors :: Colors} deriving (Show, Generic)
 instance ToJSON Theme
 
 instance FromJSON Theme
-
--- Colors
 
 data Colors = Colors
   { primary :: PrimaryColors,
@@ -25,8 +25,6 @@ instance ToJSON Colors
 
 instance FromJSON Colors
 
--- PrimaryColors
-
 data PrimaryColors = PrimaryColors
   { background :: String,
     foreground :: String
@@ -36,8 +34,6 @@ data PrimaryColors = PrimaryColors
 instance ToJSON PrimaryColors
 
 instance FromJSON PrimaryColors
-
--- RegularColors
 
 data RegularColors = RegularColors
   { black   :: String,
@@ -54,3 +50,12 @@ data RegularColors = RegularColors
 instance ToJSON RegularColors
 
 instance FromJSON RegularColors
+
+replace :: Theme -> Object -> SHM.HashMap T.Text Value
+replace theme = SHM.insert colorsTag (toJSON $ colors theme) . reset
+
+reset :: Object -> SHM.HashMap T.Text Value
+reset = SHM.map toJSON . SHM.filterWithKey (\key _ -> key /= colorsTag)
+
+colorsTag :: T.Text
+colorsTag = T.pack "colors"

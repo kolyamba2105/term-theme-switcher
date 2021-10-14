@@ -26,11 +26,9 @@ source-repository head
 library
   exposed-modules:
       Config
-      Debug
       Error
       Fetch
       Lib
-      ListUtils
       Theme
   other-modules:
       Paths_term_theme_switcher
