@@ -11,12 +11,12 @@ import           Options.Generic
 
 data Config
   = Local
-      { config :: String <?> "Path to initial config file"
-      , path   :: String <?> "Path to theme file"
+      { config :: Maybe String  <?> "Path to initial config file"
+      , path   :: String        <?> "Path to theme file"
       }
   | Remote
-      { config :: String <?> "Path to initial config file"
-      , url    :: String <?> "URL to theme file"
+      { config :: Maybe String  <?> "Path to initial config file"
+      , url    :: String        <?> "URL to theme file"
       }
   deriving (Generic, Show)
 

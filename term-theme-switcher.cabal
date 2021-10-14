@@ -39,6 +39,7 @@ library
   build-depends:
       base >=4.7 && <5
     , bytestring
+    , directory
     , either
     , http-client
     , http-client-tls
@@ -60,6 +61,7 @@ executable term-theme-switcher-exe
   build-depends:
       base >=4.7 && <5
     , bytestring
+    , directory
     , either
     , http-client
     , http-client-tls
@@ -83,6 +85,7 @@ test-suite term-theme-switcher-test
   build-depends:
       base >=4.7 && <5
     , bytestring
+    , directory
     , either
     , http-client
     , http-client-tls

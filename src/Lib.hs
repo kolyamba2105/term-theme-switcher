@@ -17,7 +17,37 @@ import           ListUtils
 import           Network.URI
 import           Options.Generic
 import           Prelude                   hiding (FilePath)
+import           System.Directory
 import           Theme
+
+parseConfig :: IO ()
+parseConfig = do
+  config <- getRecord $ T.pack "Alacritty theme swither"
+  home <- getHomeDirectory
+  case config of
+    Local configPath themePath -> applyTheme (toConfigPath home (unHelpful configPath)) (decodeLocalTheme $ toPath themePath)
+    Remote configPath themeUrl -> applyTheme (toConfigPath home (unHelpful configPath)) (decodeRemoteTheme $ unHelpful themeUrl)
+  where
+    toPath = fromText . T.pack . unHelpful
+
+toConfigPath :: String -> Maybe String -> FilePath
+toConfigPath home = maybe (fromString home </> fromString ".config/alacritty/alacritty.yml") fromString
+  where
+    fromString = fromText . T.pack
+
+applyTheme :: FilePath -> IO (Either Error Theme) -> IO ()
+applyTheme configPath applyTheme = do
+  config  <- decodeConfig configPath
+  theme   <- applyTheme
+  either print id $ liftM2 (saveTheme configPath) config theme
+
+saveTheme :: FilePath -> Object -> Theme -> IO ()
+saveTheme name config theme = encodeFile (encodeString name) (replaceTheme theme config)
+
+replaceTheme :: Theme -> Object -> SHM.HashMap T.Text Value
+replaceTheme theme = SHM.insert colorsTag (toJSON $ colors theme) . SHM.map toJSON . SHM.filterWithKey (\key _ -> key /= colorsTag)
+  where
+    colorsTag = T.pack "colors"
 
 decodeConfig :: FilePath -> IO (Either Error Object)
 decodeConfig = fmap (mapLeft FileParseError) . decodeFileEither . encodeString
@@ -25,44 +55,8 @@ decodeConfig = fmap (mapLeft FileParseError) . decodeFileEither . encodeString
 decodeLocalTheme :: FilePath -> IO (Either Error Theme)
 decodeLocalTheme = fmap (mapLeft FileParseError) . decodeFileEither . encodeString
 
-fetchTheme :: String -> IO (Either Error Theme)
-fetchTheme url =
+decodeRemoteTheme :: String -> IO (Either Error Theme)
+decodeRemoteTheme url =
   case uriFromString url of
     Left error -> pure $ Left error
     Right url  -> mapLeft FileParseError . decodeEither' <$> fetch url
-
-applyRemoteTheme :: FilePath -> String -> IO ()
-applyRemoteTheme configPath themeUrl = do
-  config  <- decodeConfig configPath
-  theme   <- fetchTheme themeUrl
-  either print id $ liftM3 saveTheme nextConfigPath config theme
-    where
-      nextConfigPath :: Either Error FilePath
-      nextConfigPath = maybeToRight InvalidConfigPath (append (directory configPath) . fromText . T.pack <$> (parseURI themeUrl >>= extractThemeName))
-
-      extractThemeName :: URI -> Maybe String
-      extractThemeName = fmap T.unpack . ListUtils.last . T.splitOn (T.pack "/") . T.pack . uriPath
-
-applyLocalTheme :: FilePath -> FilePath -> IO ()
-applyLocalTheme configPath themePath = do
-  config  <- decodeConfig configPath
-  theme   <- decodeLocalTheme themePath
-  let nextConfigPath = directory configPath </> filename themePath
-  either print id $ liftM2 (saveTheme nextConfigPath) config theme
-
-saveTheme :: FilePath -> Object -> Theme -> IO ()
-saveTheme name config theme = encodeFile (encodeString name) (applyTheme theme config)
-
-applyTheme :: Theme -> Object -> SHM.HashMap T.Text Value
-applyTheme theme = SHM.insert colorsTag (toJSON $ colors theme) . SHM.map toJSON . SHM.filterWithKey (\key _ -> key /= colorsTag)
-  where
-    colorsTag = T.pack "colors"
-
-parseConfig :: IO ()
-parseConfig = do
-  config <- getRecord $ T.pack "Alacritty theme swither"
-  case config of
-    Local configPath themePath -> applyLocalTheme (toPath configPath) (toPath themePath)
-    Remote configPath themeUrl -> applyRemoteTheme (toPath configPath) (unHelpful themeUrl)
-  where
-    toPath = fromText . T.pack . unHelpful
