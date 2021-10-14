@@ -6,7 +6,21 @@ found [here](https://github.com/eendroroy/alacritty-theme) and
 
 ## Usage
 
-There are two available commands:
+There are three available commands:
+
+```sh
+Alacritty theme swither
+
+Usage: term-theme-switcher-exe (local | remote | reset)
+
+Available options:
+  -h,--help                Show this help text
+
+Available commands:
+  local
+  remote
+  reset
+```
 
 1. Local - apply local theme to existing config
 
@@ -30,6 +44,16 @@ Available options:
   -u,--url STRING          URL to theme file
 ```
 
+3. Reset - reset to default Alacritty theme
+
+```sh
+Usage: term-theme-switcher-exe reset [-c|--config STRING]
+
+Available options:
+  -h,--help                Show this help text
+  -c,--config STRING       Path to initial config file
+```
+
 ## Demo
 
-https://user-images.githubusercontent.com/33033411/137175262-f9fc80b5-c7ec-45ac-ab86-cb3b6c6afcb1.mov
+https://user-images.githubusercontent.com/33033411/137287888-5106749a-e8ba-41ab-a3cb-7dad9dae5172.mov
