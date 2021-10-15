@@ -17,31 +17,25 @@ parseConfig :: IO ()
 parseConfig = do
   config <- getRecord $ T.pack "Alacritty theme swither"
   home <- getHomeDirectory
-  case config of
-    Local configPath themePath -> applyTheme (toConfigPath home (unHelpful configPath)) (decodeLocalTheme $ toPath themePath)
-    Remote configPath themeUrl -> applyTheme (toConfigPath home (unHelpful configPath)) (decodeRemoteTheme $ unHelpful themeUrl)
-    Reset configPath -> resetTheme $ toConfigPath home (unHelpful configPath)
-  where
-    toPath = fromText . T.pack . unHelpful
-
-toConfigPath :: String -> Maybe String -> FilePath
-toConfigPath home = maybe (fromString home </> fromString ".config/alacritty/alacritty.yml") fromString
-  where
+  let
     fromString = fromText . T.pack
+    makePath = fromString . unHelpful
+    makeConfigPath = maybe (fromString home </> fromString ".config/alacritty/alacritty.yml") fromString . unHelpful
+  case config of
+    Local configPath themePath -> applyTheme (makeConfigPath configPath) (decodeFile' $ makePath themePath)
+    Remote configPath themeUrl -> applyTheme (makeConfigPath configPath) (decodeRemoteTheme $ unHelpful themeUrl)
+    Reset configPath -> resetTheme $ makeConfigPath configPath
 
 applyTheme :: FilePath -> IO (Either Error Theme) -> IO ()
 applyTheme configPath applyTheme = do
-  config <- decodeConfig configPath
+  config <- decodeFile' configPath
   theme <- applyTheme
   either print id $ liftM2 (saveTheme configPath) config theme
   where
     saveTheme name config theme = encodeFile (encodeString name) (replace theme config)
 
-decodeConfig :: FilePath -> IO (Either Error Object)
-decodeConfig = fmap (mapLeft FileParseError) . decodeFileEither . encodeString
-
-decodeLocalTheme :: FilePath -> IO (Either Error Theme)
-decodeLocalTheme = fmap (mapLeft FileParseError) . decodeFileEither . encodeString
+decodeFile' :: FromJSON a => FilePath -> IO (Either Error a)
+decodeFile' = fmap (mapLeft FileParseError) . decodeFileEither . encodeString
 
 decodeRemoteTheme :: String -> IO (Either Error Theme)
 decodeRemoteTheme url =
@@ -51,7 +45,7 @@ decodeRemoteTheme url =
 
 resetTheme :: FilePath -> IO ()
 resetTheme configPath = do
-  config <- decodeConfig configPath
+  config <- decodeFile' configPath
   either print saveTheme config
   where
     saveTheme = encodeFile (encodeString configPath) . reset
