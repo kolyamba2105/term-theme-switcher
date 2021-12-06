@@ -1,29 +1,34 @@
-module Lib (parseConfig) where
+module Lib
+  ( parseConfig
+  ) where
 
-import           Config
-import           Control.Monad
-import           Data.Either.Combinators
-import qualified Data.Text                 as T
-import           Data.Yaml
-import           Error
-import           Fetch
-import           Filesystem.Path.CurrentOS
-import           Options.Generic
-import           Prelude                   hiding (FilePath)
-import           System.Directory
-import           Theme
+import Config
+import Control.Monad
+import Data.Either.Combinators
+import qualified Data.Text as T
+import Data.Yaml
+import Error
+import Fetch
+import Filesystem.Path.CurrentOS
+import Options.Generic
+import Prelude hiding (FilePath)
+import System.Directory
+import Theme
 
 parseConfig :: IO ()
 parseConfig = do
   config <- getRecord $ T.pack "Alacritty theme swither"
   home <- getHomeDirectory
-  let
-    fromString = fromText . T.pack
-    makePath = fromString . unHelpful
-    makeConfigPath = maybe (fromString home </> fromString ".config/alacritty/alacritty.yml") fromString . unHelpful
+  let fromString = fromText . T.pack
+      makePath = fromString . unHelpful
+      makeConfigPath =
+        maybe (fromString home </> fromString ".config/alacritty/alacritty.yml") fromString .
+        unHelpful
   case config of
-    Local configPath themePath -> applyTheme (makeConfigPath configPath) (decodeFile' $ makePath themePath)
-    Remote configPath themeUrl -> applyTheme (makeConfigPath configPath) (decodeRemoteTheme $ unHelpful themeUrl)
+    Local configPath themePath ->
+      applyTheme (makeConfigPath configPath) (decodeFile' $ makePath themePath)
+    Remote configPath themeUrl ->
+      applyTheme (makeConfigPath configPath) (decodeRemoteTheme $ unHelpful themeUrl)
     Reset configPath -> resetTheme $ makeConfigPath configPath
 
 applyTheme :: FilePath -> IO (Either Error Theme) -> IO ()
@@ -41,7 +46,7 @@ decodeRemoteTheme :: String -> IO (Either Error Theme)
 decodeRemoteTheme url =
   case uriFromString url of
     Left error -> pure $ Left error
-    Right url  -> mapLeft FileParseError . decodeEither' <$> fetch url
+    Right url -> mapLeft FileParseError . decodeEither' <$> fetch url
 
 resetTheme :: FilePath -> IO ()
 resetTheme configPath = do
